@@ -35,6 +35,8 @@ elseif(ENABLE_IBM)
   set(HPTT_CXX_FLAGS ${HPTT_CXX_FLAGS} -mtune=native -DHPTT_ARCH_IBM -maltivec -mabi=altivec)
 endif()
 
+set(HPTT_CXX_FLAGS ${HPTT_CXX_FLAGS} -fPIC)
+
 set(HPTT_SRCS src/hptt.cpp src/plan.cpp src/transpose.cpp src/utils.cpp)
 
 add_library(hptt STATIC ${HPTT_SRCS})
