@@ -155,7 +155,7 @@ std::shared_ptr<hptt::Transpose<DoubleComplex> > create_plan( const int *perm, c
 }
 }
 
-
+/*
 extern "C"{
 void sTensorTranspose( const int *perm, const int dim,
                  const float alpha, const float *A, const int *sizeA, const int *outerSizeA, 
@@ -196,8 +196,9 @@ void zTensorTranspose( const int *perm, const int dim,
    plan->setConjA(conjA);
    plan->execute();
 }
-}
 
+}
+*/
 
 
 
