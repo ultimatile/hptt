@@ -11,7 +11,7 @@ set(ENABLE_IBM OFF)
 #  set(ENABLE_IBM ON)
 #endif()
 
-set(FINE_TUNE OFF)
+#set(FINE_TUNE OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   set(HPTT_CXX_FLAGS ${HPTT_CXX_FLAGS} -qopenmp -xhost)
