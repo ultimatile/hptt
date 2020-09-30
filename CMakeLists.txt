@@ -5,7 +5,10 @@ project (HPTT C CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(ENABLE_IBM OFF)
+option(ENABLE_IBM "ENABLE IBM" OFF)
+option(ENABLE_AVX "ENABLE AVX" OFF)
+option(ENABLE_ARM "ENABLE ARM" OFF)
+option(FINE_TUNE "FINE TUNE for native hardware" OFF)
 
 #if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ppc64le")
 #  set(ENABLE_IBM ON)
@@ -56,6 +59,11 @@ target_compile_features(hptt PUBLIC cxx_std_11)
 target_include_directories(hptt PUBLIC ${PROJECT_SOURCE_DIR}/include)
 #target_compile_definitions(hptt PRIVATE ${HPTT_CXX_COMPILE_DEFS})
 target_compile_options(hptt PUBLIC ${HPTT_CXX_FLAGS})
+
+message(STATUS, "ENABLE IBM: ${ENABLE_IBM}")
+message(STATUS, "ENABLE AVX: ${ENABLE_AVX}")
+message(STATUS, "ENABLE ARM: ${ENABLE_ARM}")
+message(STATUS, "FINE_TUNE: ${FINE_TUNE}")
 
 install(TARGETS hptt
         LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
