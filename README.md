@@ -196,7 +196,7 @@ See [(pdf)](https://arxiv.org/abs/1704.04374) for details.
 
 In case you want refer to HPTT as part of a research paper, please cite the following
 article [(pdf)](https://arxiv.org/abs/1704.04374):
-```
+```text
 @inproceedings{hptt2017,
  author = {Springer, Paul and Su, Tong and Bientinesi, Paolo},
  title = {{HPTT}: {A} {H}igh-{P}erformance {T}ensor {T}ransposition {C}++ {L}ibrary},
