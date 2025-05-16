@@ -244,7 +244,7 @@ static INLINE void prefetch(const floatType* A, const int lda) { }
 #include <arm_neon.h>
 
 template <int betaIsZero, bool conjA>
-struct micro_kernel<float, betaIsZero>
+struct micro_kernel<float, betaIsZero, conjA>
 {
     static void execute(const float* __restrict__ A, const size_t lda, float* __restrict__ B, const size_t ldb, const float alpha ,const float beta)
     {
