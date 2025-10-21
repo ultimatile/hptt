@@ -171,23 +171,31 @@ void dTensorTranspose( const int *perm, const int dim,
 }
 
 void cTensorTranspose( const int *perm, const int dim,
-                 const float _Complex alpha, bool conjA, const float _Complex *A, const int *sizeA, const int *outerSizeA, 
-                 const float _Complex beta,        float _Complex *B,                   const int *outerSizeB, 
+                 const float _Complex alpha, bool conjA, const float _Complex *A, const int *sizeA, const int *outerSizeA,
+                 const float _Complex beta,        float _Complex *B,                   const int *outerSizeB,
                  const int numThreads, const int useRowMajor)
 {
-   auto plan(std::make_shared<hptt::Transpose<hptt::FloatComplex> >(sizeA, perm, outerSizeA, outerSizeB, dim, 
-                         (const hptt::FloatComplex*) A, (hptt::FloatComplex) alpha, (hptt::FloatComplex*) B, (hptt::FloatComplex) beta, hptt::ESTIMATE, numThreads, nullptr, useRowMajor));
+   auto plan(std::make_shared<hptt::Transpose<hptt::FloatComplex> >(sizeA, perm, outerSizeA, outerSizeB, dim,
+                         reinterpret_cast<const hptt::FloatComplex*>(A),
+                         *reinterpret_cast<const hptt::FloatComplex*>(&alpha),
+                         reinterpret_cast<hptt::FloatComplex*>(B),
+                         *reinterpret_cast<const hptt::FloatComplex*>(&beta),
+                         hptt::ESTIMATE, numThreads, nullptr, useRowMajor));
    plan->setConjA(conjA);
    plan->execute();
 }
 
 void zTensorTranspose( const int *perm, const int dim,
-                 const double _Complex alpha, bool conjA, const double _Complex *A, const int *sizeA, const int *outerSizeA, 
-                 const double _Complex beta,        double _Complex *B,                   const int *outerSizeB, 
+                 const double _Complex alpha, bool conjA, const double _Complex *A, const int *sizeA, const int *outerSizeA,
+                 const double _Complex beta,        double _Complex *B,                   const int *outerSizeB,
                  const int numThreads, const int useRowMajor)
 {
-   auto plan(std::make_shared<hptt::Transpose<hptt::DoubleComplex> >(sizeA, perm, outerSizeA, outerSizeB, dim, 
-                         (const hptt::DoubleComplex*) A, (hptt::DoubleComplex) alpha, (hptt::DoubleComplex*) B, (hptt::DoubleComplex) beta, hptt::ESTIMATE, numThreads, nullptr, useRowMajor));
+   auto plan(std::make_shared<hptt::Transpose<hptt::DoubleComplex> >(sizeA, perm, outerSizeA, outerSizeB, dim,
+                         reinterpret_cast<const hptt::DoubleComplex*>(A),
+                         *reinterpret_cast<const hptt::DoubleComplex*>(&alpha),
+                         reinterpret_cast<hptt::DoubleComplex*>(B),
+                         *reinterpret_cast<const hptt::DoubleComplex*>(&beta),
+                         hptt::ESTIMATE, numThreads, nullptr, useRowMajor));
    plan->setConjA(conjA);
    plan->execute();
 }
