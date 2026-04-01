@@ -44,17 +44,17 @@ target_include_directories(hptt PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_compile_options(hptt PUBLIC ${HPTT_CXX_FLAGS})
 
 install(TARGETS hptt
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
 
-set(HPTT_INCLUDES 
-    include/compute_node.h 
-    include/hptt_types.h 
-    include/hptt.h 
-    include/macros.h 
-    include/plan.h 
-    include/utils.h 
+set(HPTT_INCLUDES
+    include/compute_node.h
+    include/hptt_types.h
+    include/hptt.h
+    include/macros.h
+    include/plan.h
+    include/utils.h
     include/transpose.h)
 
 install(FILES ${HPTT_INCLUDES}
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+        DESTINATION include)
