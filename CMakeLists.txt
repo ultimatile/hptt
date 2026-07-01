@@ -24,34 +24,41 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
   # AppleClang (macOS's /usr/bin/c++) reports a compiler id distinct from
   # "Clang", so the generic Clang branch never fires here. It also rejects a
-  # bare -fopenmp, and CMake's FindOpenMP cannot locate Homebrew's keg-only
-  # libomp unaided -- left alone, HPTT builds single-threaded even when libomp
-  # is installed. Discover libomp and seed the FindOpenMP hint variables so the
-  # imported OpenMP::OpenMP_CXX target resolves. OpenMP stays optional (every
-  # omp use in the sources is guarded by _OPENMP): when libomp is absent, fall
-  # back to a single-threaded build rather than failing configure.
-  if(NOT LIBOMP_PREFIX)
-    find_program(BREW_EXECUTABLE brew)
-    if(BREW_EXECUTABLE)
-      execute_process(COMMAND ${BREW_EXECUTABLE} --prefix libomp
-                      OUTPUT_VARIABLE LIBOMP_PREFIX
-                      OUTPUT_STRIP_TRAILING_WHITESPACE
-                      ERROR_QUIET)
+  # bare -fopenmp -- left alone, HPTT builds single-threaded even when libomp is
+  # installed. First honor any OpenMP the environment already points CMake at
+  # (CMAKE_PREFIX_PATH, OpenMP_ROOT, pre-seeded OpenMP_CXX_* hints, MacPorts);
+  # only if that fails fall back to discovering Homebrew's keg-only libomp,
+  # which FindOpenMP cannot locate unaided and which needs -Xclang -fopenmp.
+  # OpenMP stays optional (every omp use in the sources is guarded by _OPENMP):
+  # when no libomp is found the build warns and stays single-threaded rather
+  # than failing configure.
+  find_package(OpenMP QUIET COMPONENTS CXX)
+  if(NOT OpenMP_CXX_FOUND)
+    if(NOT LIBOMP_PREFIX)
+      find_program(BREW_EXECUTABLE brew)
+      if(BREW_EXECUTABLE)
+        execute_process(COMMAND ${BREW_EXECUTABLE} --prefix libomp
+                        OUTPUT_VARIABLE LIBOMP_PREFIX
+                        OUTPUT_STRIP_TRAILING_WHITESPACE
+                        ERROR_QUIET)
+      endif()
     endif()
-  endif()
-  foreach(_omp_candidate "${LIBOMP_PREFIX}" /opt/homebrew/opt/libomp /usr/local/opt/libomp)
-    if(_omp_candidate AND EXISTS "${_omp_candidate}/include/omp.h")
-      set(LIBOMP_PREFIX "${_omp_candidate}")
-      break()
-    endif()
-  endforeach()
-  if(LIBOMP_PREFIX AND EXISTS "${LIBOMP_PREFIX}/include/omp.h")
-    set(OpenMP_CXX_FLAGS "-Xclang -fopenmp -I${LIBOMP_PREFIX}/include")
-    set(OpenMP_CXX_LIB_NAMES "omp")
-    set(OpenMP_omp_LIBRARY "${LIBOMP_PREFIX}/lib/libomp.dylib")
-    # COMPONENTS CXX (needs CMake >= 3.10): the project also enables C, but no C
-    # source uses OpenMP, so probing OpenMP_C would fail on the unseeded C hints.
-    find_package(OpenMP COMPONENTS CXX)
+    # Require both the header and the runtime before seeding hints, so a partial
+    # prefix does not produce a broken OpenMP_omp_LIBRARY path.
+    foreach(_omp_candidate "${LIBOMP_PREFIX}" /opt/homebrew/opt/libomp /usr/local/opt/libomp)
+      if(_omp_candidate
+         AND EXISTS "${_omp_candidate}/include/omp.h"
+         AND EXISTS "${_omp_candidate}/lib/libomp.dylib")
+        # COMPONENTS CXX (needs CMake >= 3.10): the project also enables C, but
+        # no C source uses OpenMP, so probing OpenMP_C would fail on the
+        # unseeded C hints.
+        set(OpenMP_CXX_FLAGS "-Xclang -fopenmp -I${_omp_candidate}/include")
+        set(OpenMP_CXX_LIB_NAMES "omp")
+        set(OpenMP_omp_LIBRARY "${_omp_candidate}/lib/libomp.dylib")
+        find_package(OpenMP COMPONENTS CXX)
+        break()
+      endif()
+    endforeach()
   endif()
   if(NOT OpenMP_CXX_FOUND)
     message(WARNING
