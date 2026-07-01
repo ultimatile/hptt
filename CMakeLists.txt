@@ -66,6 +66,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
       "Install libomp (e.g. `brew install libomp`) or pass "
       "-DLIBOMP_PREFIX=<path-to-libomp> to enable multithreading.")
   endif()
+  # Match the CPU tuning the Clang / GNU branches apply, but only when the
+  # toolchain accepts it: -march=native errors on Apple clang older than
+  # Xcode 14.3 (~clang 14.0.3), so gate it behind a capability check rather
+  # than assuming, as the unconditional Clang branch does.
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-march=native" HPTT_APPLECLANG_MARCH_NATIVE)
+  if(HPTT_APPLECLANG_MARCH_NATIVE)
+    set(HPTT_CXX_FLAGS ${HPTT_CXX_FLAGS} -march=native)
+  endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
   set(HPTT_CXX_FLAGS ${HPTT_CXX_FLAGS} -silent -w -Mnovect)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "XL")
