@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project (HPTT C CXX)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -21,6 +21,44 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(HPTT_CXX_FLAGS ${HPTT_CXX_FLAGS} -fopenmp -march=native)
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+  # AppleClang (macOS's /usr/bin/c++) reports a compiler id distinct from
+  # "Clang", so the generic Clang branch never fires here. It also rejects a
+  # bare -fopenmp, and CMake's FindOpenMP cannot locate Homebrew's keg-only
+  # libomp unaided -- left alone, HPTT builds single-threaded even when libomp
+  # is installed. Discover libomp and seed the FindOpenMP hint variables so the
+  # imported OpenMP::OpenMP_CXX target resolves. OpenMP stays optional (every
+  # omp use in the sources is guarded by _OPENMP): when libomp is absent, fall
+  # back to a single-threaded build rather than failing configure.
+  if(NOT LIBOMP_PREFIX)
+    find_program(BREW_EXECUTABLE brew)
+    if(BREW_EXECUTABLE)
+      execute_process(COMMAND ${BREW_EXECUTABLE} --prefix libomp
+                      OUTPUT_VARIABLE LIBOMP_PREFIX
+                      OUTPUT_STRIP_TRAILING_WHITESPACE
+                      ERROR_QUIET)
+    endif()
+  endif()
+  foreach(_omp_candidate "${LIBOMP_PREFIX}" /opt/homebrew/opt/libomp /usr/local/opt/libomp)
+    if(_omp_candidate AND EXISTS "${_omp_candidate}/include/omp.h")
+      set(LIBOMP_PREFIX "${_omp_candidate}")
+      break()
+    endif()
+  endforeach()
+  if(LIBOMP_PREFIX AND EXISTS "${LIBOMP_PREFIX}/include/omp.h")
+    set(OpenMP_CXX_FLAGS "-Xclang -fopenmp -I${LIBOMP_PREFIX}/include")
+    set(OpenMP_CXX_LIB_NAMES "omp")
+    set(OpenMP_omp_LIBRARY "${LIBOMP_PREFIX}/lib/libomp.dylib")
+    # COMPONENTS CXX (needs CMake >= 3.10): the project also enables C, but no C
+    # source uses OpenMP, so probing OpenMP_C would fail on the unseeded C hints.
+    find_package(OpenMP COMPONENTS CXX)
+  endif()
+  if(NOT OpenMP_CXX_FOUND)
+    message(WARNING
+      "OpenMP (libomp) not found for AppleClang; building HPTT single-threaded. "
+      "Install libomp (e.g. `brew install libomp`) or pass "
+      "-DLIBOMP_PREFIX=<path-to-libomp> to enable multithreading.")
+  endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "PGI")
   set(HPTT_CXX_FLAGS ${HPTT_CXX_FLAGS} -silent -w -Mnovect)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "XL")
@@ -42,6 +80,14 @@ target_compile_features(hptt PUBLIC cxx_std_11)
 target_include_directories(hptt PUBLIC ${PROJECT_SOURCE_DIR}/include)
 #target_compile_definitions(hptt PRIVATE ${HPTT_CXX_COMPILE_DEFS})
 target_compile_options(hptt PUBLIC ${HPTT_CXX_FLAGS})
+
+# On AppleClang the OpenMP compile flags and libomp link both travel through this
+# imported target (see the AppleClang branch above). Other compilers carry
+# -fopenmp inline via HPTT_CXX_FLAGS and never create this target, so the guard
+# keeps their builds byte-identical.
+if(TARGET OpenMP::OpenMP_CXX)
+  target_link_libraries(hptt PUBLIC OpenMP::OpenMP_CXX)
+endif()
 
 install(TARGETS hptt
         LIBRARY DESTINATION lib
